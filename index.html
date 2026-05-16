@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>מחיר חכם — בדיקת מחירים בישראל</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --gold: #f6d365;
+    --text: #f0f0ff;
+    --text2: rgba(240,240,255,0.5);
+    --text3: rgba(240,240,255,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background mesh */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(108,99,255,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 80%, rgba(255,101,132,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 50% 50%, rgba(67,233,123,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .header {
+    padding: 1.5rem 1.25rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+  }
+
+  .header-text h1 {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-text p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    margin: 0 1.25rem;
+    border: 2px dashed rgba(108,99,255,0.3);
+    border-radius: 20px;
+    background: var(--surface);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(108,99,255,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: rgba(108,99,255,0.6);
+    transform: translateY(-2px);
+  }
+
+  .upload-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(108,99,255,0.4));
+  }
+
+  .upload-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .upload-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 20px;
+  }
+
+  .upload-btn {
+    background: linear-gradient(135deg, var(--accent), #8b7cf8);
+    border: none;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(108,99,255,0.3);
+  }
+
+  .upload-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.4); }
+
+  #file-input { display: none; }
+
+  /* Preview */
+  .preview-wrap {
+    margin: 0 1.25rem;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .preview-img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    display: block;
+    background: #0a0a0f;
+  }
+
+  .preview-actions {
+    padding: 12px 14px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-analyze {
+    flex: 1;
+    background: linear-gradient(135deg, var(--accent), #8b7cf8);
+    border: none;
+    color: #fff;
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 15px rgba(108,99,255,0.3);
+  }
+
+  .btn-analyze:hover { transform: translateY(-1px); }
+  .btn-analyze:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+  .btn-clear {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Loading */
+  .loading-wrap {
+    margin: 1.5rem 1.25rem;
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(108,99,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .loading-sub {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .loading-steps {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: right;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text3);
+    transition: color 0.5s;
+  }
+
+  .step.active { color: var(--text2); }
+  .step.done { color: var(--accent3); }
+
+  .step-icon { font-size: 16px; width: 20px; flex-shrink: 0; }
+
+  /* Results */
+  .result-wrap {
+    margin: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Product card */
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .product-emoji {
+    font-size: 36px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+  }
+
+  .product-info { flex: 1; }
+
+  .product-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .product-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  /* Price card */
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  .price-card-title {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .price-range {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .price-min {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent3), #38f9d7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .price-sep { font-size: 16px; color: var(--text3); margin-bottom: 4px; }
+
+  .price-max {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text2);
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .price-label {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  .price-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .price-source {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+
+  .source-name { font-size: 13px; font-weight: 500; }
+  .source-price { font-size: 14px; font-weight: 700; color: var(--gold); }
+  .source-badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  .badge-cheap { background: rgba(67,233,123,0.15); color: var(--accent3); }
+  .badge-avg { background: rgba(246,211,101,0.15); color: var(--gold); }
+  .badge-exp { background: rgba(255,101,132,0.15); color: var(--accent2); }
+
+  /* Recommendation card */
+  .rec-card {
+    border-radius: 20px;
+    padding: 18px;
+    border: 1px solid;
+  }
+
+  .rec-card.buy {
+    background: rgba(67,233,123,0.08);
+    border-color: rgba(67,233,123,0.25);
+  }
+
+  .rec-card.wait {
+    background: rgba(246,211,101,0.08);
+    border-color: rgba(246,211,101,0.25);
+  }
+
+  .rec-card.search {
+    background: rgba(108,99,255,0.08);
+    border-color: rgba(108,99,255,0.25);
+  }
+
+  .rec-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .rec-icon { font-size: 28px; }
+
+  .rec-title {
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .rec-card.buy .rec-title { color: var(--accent3); }
+  .rec-card.wait .rec-title { color: var(--gold); }
+  .rec-card.search .rec-title { color: #a78bfa; }
+
+  .rec-text {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .rec-tips {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .rec-tip {
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .rec-tip::before {
+    content: '•';
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Error */
+  .error-wrap {
+    margin: 1rem 1.25rem;
+    background: rgba(255,101,132,0.1);
+    border: 1px solid rgba(255,101,132,0.3);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .error-icon { font-size: 32px; margin-bottom: 8px; }
+  .error-text { font-size: 14px; color: #ff8fa3; }
+
+  /* New search btn */
+  .btn-new {
+    margin: 0 1.25rem 2rem;
+    width: calc(100% - 2.5rem);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 13px;
+    border-radius: 12px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-new:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo">🔍</div>
+    <div class="header-text">
+      <h1>מחיר חכם</h1>
+      <p>בדיקת מחירים בישראל עם AI</p>
+    </div>
+  </div>
+  <div id="main"></div>
+  <div class="footer">מופעל על ידי Claude AI · מחירים משוערים בלבד</div>
+</div>
+
+<script>
+const GROK_KEY = 'xai-Gk9qsEi3mmSsKNikGf5fofy2JJAyNUf6KJ6z8AT6AMx197jxgArvyuYSKGjkt1ZJZ7eSGETTKc4K6ija';
+
+let state = {
+  screen: 'upload', // upload | preview | loading | result | error
+  imageBase64: null,
+  imageType: null,
+  result: null,
+  loadingStep: 0,
+  error: null
+};
+
+
+function getStoreSearchUrl(storeName, productName) {
+  const q = encodeURIComponent(productName);
+  const stores = {
+    'שופרסל': `https://www.shufersal.co.il/online/he/search?q=${q}`,
+    'רמי לוי': `https://www.rami-levy.co.il/he/online/search?q=${q}`,
+    'ויקטורי': `https://www.victory.co.il/he/search?q=${q}`,
+    'מגה': `https://www.mega.co.il/he/search?q=${q}`,
+    'יוחננוף': `https://www.yohananof.co.il/search?q=${q}`,
+    'אושר עד': `https://www.osher-ad.co.il/search?q=${q}`,
+    'קרפור': `https://www.carrefour.co.il/search?query=${q}`,
+    'חצי חינם': `https://www.hazi-hinam.co.il/search?q=${q}`,
+    'טיב טעם': `https://www.tivtaam.co.il/search?q=${q}`,
+    'מחסני השוק': `https://www.machsaneyhashouk.co.il/search?q=${q}`,
+    'KSP': `https://ksp.co.il/web/cat/search?keyword=${q}`,
+    'bug': `https://www.bug.co.il/search?q=${q}`,
+    'Ivory': `https://www.ivory.co.il/catalog.php?act=SRCH&q=${q}`,
+    'ZARA': `https://www.zara.com/il/he/search?searchTerm=${q}`,
+    'H&M': `https://www2.hm.com/he_il/search-results.html?q=${q}`,
+    'Fox': `https://www.fox.co.il/search?q=${q}`,
+    'Renuar': `https://www.renuar.co.il/search?q=${q}`,
+    'Terminal X': `https://www.terminalx.com/catalogsearch/result/?q=${q}`,
+    'amazon.co.il': `https://www.amazon.co.il/s?k=${q}`,
+    'זאפ': `https://www.zap.co.il/search.aspx?keyword=${q}`
+  };
+  for (const [key, url] of Object.entries(stores)) {
+    if (storeName.includes(key) || key.includes(storeName)) return url;
+  }
+  return `https://www.google.co.il/search?q=${encodeURIComponent(storeName)}+${q}`;
+}
+
+function render() {
+  const main = document.getElementById('main');
+  if (state.screen === 'upload') main.innerHTML = renderUpload();
+  else if (state.screen === 'preview') main.innerHTML = renderPreview();
+  else if (state.screen === 'loading') main.innerHTML = renderLoading();
+  else if (state.screen === 'result') main.innerHTML = renderResult();
+  else if (state.screen === 'error') main.innerHTML = renderError();
+
+  // Attach events
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) fileInput.addEventListener('change', handleFile);
+
+  const zone = document.getElementById('upload-zone');
+  if (zone) {
+    zone.addEventListener('click', () => document.getElementById('file-input').click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+  }
+}
+
+function renderUpload() {
+  return `
+  <div class="upload-zone fade-in" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*" capture="environment">
+    <span class="upload-icon">📸</span>
+    <div class="upload-title">צלם או העלה תמונה</div>
+    <div class="upload-sub">צלם מוצר ו-AI יבדוק את המחיר בישראל</div>
+    <button class="upload-btn" onclick="document.getElementById('file-input').click()">בחר תמונה / צלם</button>
+  </div>
+  <div style="margin:12px 1.25rem;display:flex;align-items:center;gap:8px;">
+    <div style="flex:1;height:1px;background:var(--border)"></div>
+    <span style="font-size:12.6px;color:var(--text3)">כיצד זה עובד?</span>
+    <div style="flex:1;height:1px;background:var(--border)"></div>
+  </div>
+  <div style="margin:0 1.25rem;display:flex;flex-direction:column;gap:8px;">
+    ${['📸 צלם תמונה של המוצר', '🤖 AI מזהה את המוצר', '🔍 חיפוש מחירים בישראל', '💡 המלצה חכמה'].map((s,i) => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:14.9px;color:var(--text2);">
+      <span style="font-size:20.7px;">${s.split(' ')[0]}</span>
+      <span>${s.split(' ').slice(1).join(' ')}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderPreview() {
+  return `
+  <div class="preview-wrap fade-in">
+    <img class="preview-img" src="data:${state.imageType};base64,${state.imageBase64}" alt="תמונת המוצר">
+    <div class="preview-actions">
+      <button class="btn-analyze" id="btn-analyze" onclick="analyze()">🔍 בדוק מחיר</button>
+      <button class="btn-clear" onclick="reset()">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderLoading() {
+  const steps = [
+    { text: 'מזהה את המוצר בתמונה...', icon: '🤖' },
+    { text: 'מחפש מחירים בישראל...', icon: '🔍' },
+    { text: 'מנתח ומשווה מחירים...', icon: '📊' },
+    { text: 'מכין המלצה חכמה...', icon: '💡' }
+  ];
+  return `
+  <div class="loading-wrap fade-in">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">בודק מחירים...</div>
+    <div class="loading-sub">AI עובד בשבילך</div>
+    <div class="loading-steps">
+      ${steps.map((s,i) => `
+      <div class="step ${i < state.loadingStep ? 'done' : i === state.loadingStep ? 'active' : ''}">
+        <span class="step-icon">${i < state.loadingStep ? '✓' : s.icon}</span>
+        <span>${s.text}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderResult() {
+  const r = state.result;
+  if (!r) return '';
+
+  const recIcons = { buy: '✅', wait: '⏳', search: '🔎' };
+  const recIcon = recIcons[r.recommendation.type] || '💡';
+
+  return `
+  <div class="result-wrap fade-in">
+
+    <!-- כרטיס מוצר -->
+    <div class="product-card">
+      <span class="product-emoji">${r.emoji}</span>
+      <div class="product-info">
+        <div class="product-name">${r.productName}</div>
+        <div class="product-desc">${r.productDesc}</div>
+      </div>
+    </div>
+
+    <!-- טבלת מחירים בסגנון Grok -->
+    <div class="price-card">
+      <div class="price-card-title">💰 מחירים בישראל</div>
+
+      <!-- כותרות טבלה -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:6px 10px;margin-bottom:4px;">
+        <span style="font-size:12.6px;color:var(--text3);font-weight:600;text-align:right;">רשת ↕</span>
+        <span style="font-size:12.6px;color:var(--text3);font-weight:600;text-align:center;">מחיר משוער ↕</span>
+        <span style="font-size:12.6px;color:var(--text3);font-weight:600;text-align:right;">הערות</span>
+      </div>
+
+      <!-- שורות טבלה -->
+      ${[...r.sources].sort((a,b) => (a.priceMin||a.price||0) - (b.priceMin||b.price||0)).map(s => {
+        const priceStr = s.priceMin && s.priceMax && s.priceMin !== s.priceMax
+          ? `₪${s.priceMax} - ${s.priceMin}`
+          : `₪${s.priceMin || s.price || 0}`;
+        return `
+      <a href="${getStoreSearchUrl(s.name, r.productName)}" target="_blank" style="text-decoration:none;display:block;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;align-items:center;padding:10px 10px;background:var(--surface2);border-radius:10px;margin-bottom:5px;cursor:pointer;transition:background 0.2s;"
+          onmouseover="this.style.background='rgba(108,99,255,0.12)'" onmouseout="this.style.background='var(--surface2)'">
+          <span style="font-size:14.9px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:4px;justify-content:flex-end;">${s.name} <span style="font-size:11.5px;color:var(--accent);opacity:0.7;">↗</span></span>
+          <span style="font-size:14.9px;font-weight:700;color:var(--gold);text-align:center;">${priceStr}</span>
+          <span style="font-size:12.6px;color:var(--text2);text-align:right;">${s.note || ''}</span>
+        </div>
+      </a>`}).join('')}
+
+      <!-- מחיר סביר ומממוצע -->
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(108,99,255,0.08);border-radius:10px;border:0.5px solid rgba(108,99,255,0.2);">
+        <div style="font-size:13.8px;color:var(--text2);">מחיר סביר וממוצע היום:</div>
+        <div style="font-size:20.7px;font-weight:800;color:var(--accent3);margin-top:2px;">₪${r.priceMin.toLocaleString()} - ${r.priceMax.toLocaleString()}</div>
+        ${r.productTip ? `<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(108,99,255,0.2);font-size:13.8px;color:var(--text2);line-height:1.5;">💡 ${r.productTip}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- המלצה + טיפים -->
+    <div class="rec-card ${r.recommendation.type}">
+      <div class="rec-header">
+        <span class="rec-icon">${recIcon}</span>
+        <span class="rec-title">${r.recommendation.title}</span>
+      </div>
+      <div class="rec-text">${r.recommendation.text}</div>
+      ${r.recommendation.tips?.length ? `
+      <div style="margin-top:10px;font-size:14.9px;font-weight:600;color:var(--text2);margin-bottom:6px;">טיפים לחיסכון:</div>
+      <div class="rec-tips">
+        ${r.recommendation.tips.map(t => `<div class="rec-tip">${t}</div>`).join('')}
+      </div>` : ''}
+    </div>
+
+  </div>
+  <button class="btn-new" onclick="reset()">🔄 בדוק מוצר נוסף</button>`;
+}
+
+function renderError() {
+  return `
+  <div class="error-wrap fade-in">
+    <div class="error-icon">😕</div>
+    <div class="error-text">${state.error || 'משהו השתבש. נסה שוב.'}</div>
+  </div>
+  <button class="btn-new" onclick="reset()">נסה שוב</button>`;
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const base64 = e.target.result.split(',')[1];
+    state.imageBase64 = base64;
+    state.imageType = file.type;
+    state.screen = 'preview';
+    render();
+  };
+  reader.readAsDataURL(file);
+}
+
+function reset() {
+  state = { screen: 'upload', imageBase64: null, imageType: null, result: null, loadingStep: 0, error: null };
+  render();
+}
+
+async function analyze() {
+  state.screen = 'loading';
+  state.loadingStep = 0;
+  render();
+
+  // Animate steps
+  const stepInterval = setInterval(() => {
+    if (state.loadingStep < 3) { state.loadingStep++; render(); }
+    else clearInterval(stepInterval);
+  }, 2500);
+
+  try {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROK_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'grok-4',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${state.imageType};base64,${state.imageBase64}`,
+                detail: 'high'
+              }
+            },
+            {
+              type: 'text',
+              text: `אתה מומחה מחירים בישראל. זהה את המוצר בתמונה ותן מידע מחירים ריאליסטי לשוק הישראלי.
+
+אם המוצר הוא מזון/שתייה/מוצרי מכולת — חובה לציין מחירים בדיוק ברשתות הבאות לפי הסדר: רמי לוי, שופרסל, ויקטורי, קרפור, חצי חינם, טיב טעם, מחסני השוק. אם אינך יודע מחיר מדויק תן טווח משוער. אסור להשמיט רשת מהרשימה.
+אם המוצר הוא אלקטרוניקה — ציין: KSP, bug, Ivory, זאפ, amazon.co.il.
+אם ביגוד — ציין: ZARA, H&M, Fox, Renuar, Terminal X.
+
+החזר JSON בלבד ללא markdown:
+{
+  "emoji": "אימוג'י מתאים",
+  "productName": "שם המוצר בעברית",
+  "productDesc": "תיאור קצר - מותג, משקל/נפח, מאפיינים",
+  "productType": "food או electronics או fashion או other",
+  "priceMin": מחיר מינימום מספר,
+  "priceMax": מחיר מקסימום מספר,
+  "priceAvg": מחיר ממוצע מספר,
+  "productTip": "טיפ מעניין על המוצר — תזונתי, איכות, השוואה לחלופות, מה כדאי לדעת",
+  "sources": [
+    {"name": "שם חנות", "priceMin": מחיר מינימום, "priceMax": מחיר מקסימום, "note": "הערה קצרה כמו: לרוב הכי זול / בסניף ומבצע / מחירון מלא / מבצעים טובים", "badge": "זול"},
+    {"name": "שם חנות 2", "priceMin": מחיר, "priceMax": מחיר, "note": "הערה", "badge": "ממוצע"},
+    {"name": "שם חנות 3", "priceMin": מחיר, "priceMax": מחיר, "note": "הערה", "badge": "יקר"},
+    {"name": "שם חנות 4", "priceMin": מחיר, "priceMax": מחיר, "note": "הערה", "badge": "ממוצע"},
+    {"name": "מחיר רגיל", "priceMin": מחיר, "priceMax": מחיר, "note": "מחירון מלא", "badge": "יקר"}
+  ],
+  "recommendation": {
+    "type": "buy או wait או search",
+    "title": "כותרת",
+    "text": "הסבר",
+    "tips": ["טיפ 1", "טיפ 2", "טיפ 3"]
+  }
+}
+badge: זול/ממוצע/יקר. החזר מחירים ריאליים בש"ח.`
+            }
+          ]
+        }]
+      })
+    });
+
+    clearInterval(stepInterval);
+    state.loadingStep = 4;
+
+    if (!response.ok) {
+      const err = await response.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'שגיאת שרת: ' + response.status);
+    }
+
+    const data = await response.json();
+    const text = data.choices[0].message.content.trim();
+    const clean = text.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+
+    state.result = result;
+    state.screen = 'result';
+    render();
+
+  } catch (err) {
+    clearInterval(stepInterval);
+    console.error(err);
+    state.error = 'לא הצלחתי לזהות את המוצר או לבדוק מחירים. נסה תמונה ברורה יותר.';
+    state.screen = 'error';
+    render();
+  }
+}
+
+render();
+</script>
+</body>
+</html>
