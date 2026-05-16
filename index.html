@@ -506,14 +506,22 @@
 <body>
 <div id="app">
   <div class="header">
-    <div class="logo">🔍</div>
+    <div class="logo" style="display:flex;align-items:center;justify-content:center;">
+      <svg width="42" height="42" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="13" fill="rgba(255,255,255,0.15)" stroke="white" stroke-width="2.5"/>
+        <line x1="29" y1="29" x2="38" y2="38" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <path d="M13 24 L13 13 Q13 10 16 10 Q19 10 19 13 L19 20 Q19 24 15 24 Z" fill="white"/>
+        <line x1="11" y1="15" x2="21" y2="15" stroke="white" stroke-width="1.5"/>
+        <line x1="11" y1="19" x2="21" y2="19" stroke="white" stroke-width="1.5"/>
+      </svg>
+    </div>
     <div class="header-text">
       <h1>מחיר חכם</h1>
       <p>בדיקת מחירים בישראל עם AI</p>
     </div>
   </div>
   <div id="main"></div>
-  <div class="footer">מופעל על ידי Claude AI · מחירים משוערים בלבד</div>
+  <div class="footer">אביב פיתוח אפליקציות · מחירים משוערים בלבד</div>
 </div>
 
 <script>
@@ -584,7 +592,20 @@ function renderUpload() {
   return `
   <div class="upload-zone fade-in" id="upload-zone">
     <input type="file" id="file-input" accept="image/*" capture="environment">
-    <span class="upload-icon">📸</span>
+    <span class="upload-icon">
+      <svg width="56" height="56" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="22" cy="22" r="17" fill="rgba(108,99,255,0.2)" stroke="white" stroke-width="3"/>
+        <line x1="35" y1="35" x2="50" y2="50" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <!-- שקל: קו ימין אנכי -->
+        <line x1="18" y1="12" x2="18" y2="31" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- שקל: קו שמאל אנכי -->
+        <line x1="26" y1="12" x2="26" y2="24" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- שקל: קשת עליונה -->
+        <path d="M18 18 Q22 12 26 14" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- שקל: קו אופקי תחתון -->
+        <line x1="14" y1="31" x2="30" y2="31" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </span>
     <div class="upload-title">צלם או העלה תמונה</div>
     <div class="upload-sub">צלם מוצר ו-AI יבדוק את המחיר בישראל</div>
     <button class="upload-btn" onclick="document.getElementById('file-input').click()">בחר תמונה / צלם</button>
@@ -684,7 +705,7 @@ function renderResult() {
       <!-- מחיר סביר ומממוצע -->
       <div style="margin-top:10px;padding:10px 12px;background:rgba(108,99,255,0.08);border-radius:10px;border:0.5px solid rgba(108,99,255,0.2);">
         <div style="font-size:13.8px;color:var(--text2);">מחיר סביר וממוצע היום:</div>
-        <div style="font-size:20.7px;font-weight:800;color:var(--accent3);margin-top:2px;">₪${r.priceMin.toLocaleString()} - ${r.priceMax.toLocaleString()}</div>
+        <div style="font-size:20.7px;font-weight:800;color:var(--accent3);margin-top:2px;">₪${r.priceMax.toLocaleString()} - ${r.priceMin.toLocaleString()}</div>
         ${r.productTip ? `<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(108,99,255,0.2);font-size:13.8px;color:var(--text2);line-height:1.5;">💡 ${r.productTip}</div>` : ''}
       </div>
     </div>
